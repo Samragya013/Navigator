@@ -1,74 +1,62 @@
 # ========================================
 # RENDER.COM DEPLOYMENT CONFIGURATION
 # ========================================
-# This file configures automatic deployment on render.com
-# Push this file to your GitHub repository and connect it to Render
+# Native Node.js deployment (no Docker required)
+# Push this to GitHub and Render will auto-deploy
 
 services:
-  # Backend Service
+  # Backend Service - Native Node.js
   - type: web
     name: navigator-backend
     env: node
     plan: free
-    buildCommand: cd backend && npm install --production
+    region: virginia
+    repo: https://github.com/Samragya013/Navigator.git
+    branch: main
+    
+    # Root directory where package.json is located
+    rootDir: backend
+    
+    # Build and start configuration
+    buildCommand: npm install --production
     startCommand: npm start
+    
+    # Environment variables
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 10000
-      - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: navigator-frontend
-          property: url
       - key: OPENROUTE_ENABLED
         value: "true"
       - key: RATE_LIMIT_WINDOW_MS
         value: "900000"
       - key: RATE_LIMIT_MAX_REQUESTS
         value: "100"
-    routes:
-      - type: http
-        path: /api
+      - key: LOG_LEVEL
+        value: info
+      - key: FRONTEND_URL
+        fromService:
+          type: static_site
+          name: navigator-frontend
+          property: url
+    
+    # Health check configuration
     healthCheckPath: /api/health
     healthCheckInterval: 60
-    headers:
-      - http_path: "*"
-        http_methods:
-          - GET
-          - POST
-          - OPTIONS
-        headers:
-          - key: Access-Control-Allow-Origin
-            value: "*"
-          - key: Access-Control-Allow-Methods
-            value: "GET, POST, OPTIONS"
-          - key: Access-Control-Allow-Headers
-            value: "Content-Type, Authorization"
-    numInstances: 1
-    maxNumInstances: 1
+    
+    # Auto-deploy on GitHub push
+    autoDeployOnPush: true
 
-  # Frontend Service
+  # Frontend Service - Static Site
   - type: static_site
     name: navigator-frontend
-    staticPublishPath: ./frontend
-    buildCommand: echo "Deploying frontend - no build needed"
-    routes:
-      - type: http
-        path: /
-    headers:
-      - http_path: "*"
-        headers:
-          - key: Cache-Control
-            value: "public, max-age=3600"
-      - http_path: "/index.html"
-        headers:
-          - key: Cache-Control
-            value: "no-cache, no-store, must-revalidate"
-    envVars:
-      - key: BACKEND_URL
-        fromService:
-          type: web
-          name: navigator-backend
-          property: url
+    repo: https://github.com/Samragya013/Navigator.git
+    branch: main
+    publishPath: frontend
+    
+    # Build config
+    buildCommand: echo "Frontend ready"
+    
+    # Auto-deploy
+    autoDeployOnPush: true

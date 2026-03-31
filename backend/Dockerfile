@@ -28,12 +28,12 @@ COPY --chown=nodejs:nodejs . .
 # Switch to non-root user
 USER nodejs
 
-# Expose port
-EXPOSE 5000
+# Expose port (Render uses 10000 for production, 5000 for development)
+EXPOSE 5000 10000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:5000/api/health', (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
+  CMD node -e "require('http').get('http://localhost:' + (process.env.PORT || 5000), (r) => {if (r.statusCode !== 200) throw new Error(r.statusCode)})"
 
-# Start application
+# Start application (uses PORT env var)
 CMD ["npm", "start"]
