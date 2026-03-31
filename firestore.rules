@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow reading location results - public access during development
+    match /locations/{document=**} {
+      allow read: if true;
+      allow create: if request.auth != null || true;
+      allow update, delete: if request.auth != null;
+    }
+    
+    // Allow reading requests - public access during development
+    match /requests/{document=**} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if request.auth != null;
+    }
+    
+    // Default: deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

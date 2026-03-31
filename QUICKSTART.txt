@@ -1,0 +1,162 @@
+# QUICK START GUIDE
+
+Fast setup to get the application running in 5 minutes.
+
+## Prerequisites
+
+- Node.js 18+
+- npm or yarn
+- A modern web browser
+
+## 1. Backend Setup (2 minutes)
+
+```bash
+cd backend
+
+# Install dependencies
+npm install
+
+# Copy environment template
+cp .env.example .env
+
+# IMPORTANT: Edit .env file with your values
+# Minimum required:
+# NODE_ENV=development
+# PORT=5000
+# FRONTEND_URL=http://localhost:3000
+# OPENROUTE_ENABLED=true
+```
+
+**Start Backend:**
+```bash
+npm run dev
+```
+
+You'll see: ✓ Server running on http://localhost:5000
+
+## 2. Frontend Setup (1 minute)
+
+**Option A: Using Python (Recommended)**
+```bash
+cd frontend
+python -m http.server 3000
+```
+
+Then open: http://localhost:3000
+
+**Option B: Using Node.js**
+```bash
+cd frontend
+npx http-server -p 3000
+```
+
+**Option C: Direct Browser**
+- Just open `frontend/index.html` in your browser
+
+## 3. Test the Application (2 minutes)
+
+1. Map loads with your location
+2. Click anywhere on the map
+3. Green marker appears
+4. Wait for loading spinner
+5. Result card displays estimated time
+
+## Troubleshooting
+
+### Backend won't start
+```bash
+# Check if port 5000 is in use
+# Kill it: kill -9 $(lsof -t -i:5000)
+# Or change PORT in .env to 5001
+```
+
+### "Cannot reach API" error
+```bash
+# Check API_BASE_URL in frontend/map.js
+# Should be: http://localhost:5000 (development)
+# Or: https://your-backend.com (production)
+```
+
+### Coordinates invalid
+```bash
+# Click on the map itself (not the edges)
+# Latitude: -90 to 90
+# Longitude: -180 to 180
+```
+
+## Next Steps
+
+- [ ] Read README.md for complete documentation
+- [ ] Setup Firebase (optional, for production)
+- [ ] Deploy to production (see DEPLOYMENT.md)
+- [ ] Configure custom API endpoints
+
+## Commands Reference
+
+```bash
+# Backend Development
+npm run dev                 # Start with auto-reload
+npm start                   # Production start
+
+# Cleanup Old Records
+node cleanup.js            # Remove old requests
+
+# Validate Setup
+node ../QUICKSTART.js      # Check file structure
+```
+
+## Configuration
+
+### Update Backend URL (Frontend)
+
+Edit `frontend/map.js` line 4:
+
+```javascript
+const API_BASE_URL = 'http://localhost:5000'; // Change this
+```
+
+### Use Different Distance API
+
+Edit `backend/.env`:
+
+```env
+# Option 1: OpenRouteService (FREE)
+OPENROUTE_ENABLED=true
+
+# Option 2: Google Maps (Requires API Key)
+GOOGLE_MAPS_ENABLED=true
+GOOGLE_MAPS_API_KEY=your-api-key
+```
+
+## Port Numbers
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:5000
+- API Base: http://localhost:5000/api
+- Health: http://localhost:5000/api/health
+- Docs: http://localhost:5000/docs
+
+## First Test Request
+
+```bash
+curl -X POST http://localhost:5000/api/location \
+  -H "Content-Type: application/json" \
+  -d '{"latitude": 40.7128, "longitude": -74.0060}'
+```
+
+You'll get:
+```json
+{
+  "status": "success",
+  "message": "Estimated travel time calculated successfully.",
+  "estimated_time": "25 minutes",
+  "distance": "20.50 kilometers",
+  "location": {"latitude": 40.7128, "longitude": -74.0060}
+}
+```
+
+---
+
+**Everything running? Great!** 🎉
+
+Next: Read README.md for full documentation or DEPLOYMENT.md to go live.

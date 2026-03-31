@@ -1,0 +1,281 @@
+/**
+ * Main Express Server
+ * Entry point for the backend API
+ */
+
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+import { createRateLimiter } from './middleware/rateLimit.js';
+import { initializeFirebase } from './database/firebasConfig.js';
+import navigationRoutes from './routes/navigation.js';
+
+// Load environment variables
+dotenv.config();
+
+// Create Express app
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// ============================================
+// SECURITY MIDDLEWARE
+// ============================================
+
+// Helmet helps secure Express apps by setting HTTP response headers
+app.use(helmet());
+
+// CORS configuration - Accept multiple origins
+const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:8000',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:8000',
+    process.env.FRONTEND_URL,
+    process.env.NETLIFY_URL
+].filter(Boolean); // Remove undefined values
+
+const corsOptions = {
+    origin: function (origin, callback) {
+        // Check if origin is allowed or if it's a Netlify deployment
+        if (!origin || allowedOrigins.includes(origin) || (origin && origin.includes('netlify.app'))) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    maxAge: 3600
+};
+
+app.use(cors(corsOptions));
+
+// Rate limiting
+const globalLimiter = createRateLimiter(
+    parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 900000,
+    parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
+);
+app.use(globalLimiter);
+
+// ============================================
+// BODY PARSING MIDDLEWARE
+// ============================================
+
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
+// ============================================
+// LOGGING MIDDLEWARE
+// ============================================
+
+app.use((req, res, next) => {
+    const start = Date.now();
+    
+    res.on('finish', () => {
+        const duration = Date.now() - start;
+        const logSymbol = res.statusCode >= 400 ? '✗' : '✓';
+        console.log(
+            `${logSymbol} ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`
+        );
+    });
+
+    next();
+});
+
+// ============================================
+// ROUTES
+// ============================================
+
+// API Routes
+app.use('/api', navigationRoutes);
+
+/**
+ * Root endpoint
+ */
+app.get('/', (req, res) => {
+    res.status(200).json({
+        message: 'Interactive Map - Time Estimation API',
+        version: '1.0.0',
+        status: 'online',
+        endpoints: {
+            postLocation: 'POST /api/location',
+            getResult: 'GET /api/result/:requestId',
+            validateCoordinates: 'POST /api/validate',
+            health: 'GET /api/health'
+        }
+    });
+});
+
+/**
+ * Root path with documentation
+ */
+app.get('/docs', (req, res) => {
+    res.status(200).json({
+        title: 'Interactive Map Time Estimation API',
+        description: 'REST API for calculating time estimations based on map coordinates',
+        version: '1.0.0',
+        endpoints: [
+            {
+                method: 'POST',
+                path: '/api/location',
+                description: 'Submit coordinates and get time estimation',
+                body: {
+                    latitude: 'number (required)',
+                    longitude: 'number (required)'
+                },
+                example_response: {
+                    status: 'success',
+                    message: 'Estimated travel time calculated successfully.',
+                    estimated_time: '25 minutes',
+                    distance: '20.50 kilometers',
+                    location: { latitude: 40.7128, longitude: -74.006 },
+                    timestamp: '2026-03-31T12:00:00.000Z',
+                    requestId: 'doc123'
+                }
+            },
+            {
+                method: 'GET',
+                path: '/api/result/:requestId',
+                description: 'Retrieve stored result by request ID',
+                params: {
+                    requestId: 'string (required)'
+                }
+            },
+            {
+                method: 'POST',
+                path: '/api/validate',
+                description: 'Validate coordinates without storing',
+                body: {
+                    latitude: 'number',
+                    longitude: 'number'
+                }
+            },
+            {
+                method: 'GET',
+                path: '/api/health',
+                description: 'Health check endpoint'
+            }
+        ]
+    });
+});
+
+// ============================================
+// 404 HANDLER
+// ============================================
+
+app.use('*', (req, res) => {
+    res.status(404).json({
+        status: 'error',
+        message: 'Endpoint not found.',
+        path: req.originalUrl,
+        method: req.method
+    });
+});
+
+// ============================================
+// ERROR HANDLING MIDDLEWARE
+// ============================================
+
+app.use((err, req, res, next) => {
+    console.error('✗ Unhandled error:', err);
+
+    res.status(err.status || 500).json({
+        status: 'error',
+        message: process.env.NODE_ENV === 'production'
+            ? 'An error occurred processing your request.'
+            : err.message,
+        timestamp: new Date().toISOString()
+    });
+});
+
+// ============================================
+// SERVER STARTUP
+// ============================================
+
+/**
+ * Start server and initialize services
+ */
+const startServer = async () => {
+    try {
+        // Initialize Firebase if configured
+        if (process.env.FIREBASE_PROJECT_ID) {
+            console.log('📦 Initializing Firebase Firestore...');
+            try {
+                initializeFirebase();
+                console.log('✓ Firebase connection established and verified');
+            } catch (firebaseError) {
+                console.error('✗ Firebase initialization failed:', firebaseError.message);
+                console.error('⚠️  Continuing without database - some features may not work');
+            }
+        } else {
+            console.warn('⚠️  Firebase not configured in .env');
+            console.warn('    Location data will not be persisted');
+            console.warn('    See .env.example for configuration instructions');
+        }
+
+        // Start Express server
+        const server = app.listen(PORT, () => {
+            console.log('');
+            console.log('═══════════════════════════════════════════════');
+            console.log('🚀 Interactive Map Backend Server');
+            console.log('═══════════════════════════════════════════════');
+            console.log(`✓ Server running on http://localhost:${PORT}`);
+            console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
+            console.log(`✓ Frontend URL: ${process.env.FRONTEND_URL || 'not configured'}`);
+            console.log(`✓ API Docs: http://localhost:${PORT}/docs`);
+            console.log('✓ Database: Firebase Firestore');
+            console.log('═══════════════════════════════════════════════');
+            console.log('');
+        });
+
+        // Store server reference for graceful shutdown
+        global.server = server;
+
+    } catch (error) {
+        console.error('✗ Failed to start server:', error);
+        process.exit(1);
+    }
+};
+
+// Handle process termination with graceful shutdown
+process.on('SIGINT', () => {
+    console.log('\n✓ Received SIGINT - shutting down gracefully...');
+    gracefulShutdown();
+});
+
+process.on('SIGTERM', () => {
+    console.log('\n✓ Received SIGTERM - terminating...');
+    gracefulShutdown();
+});
+
+// Graceful shutdown function
+async function gracefulShutdown() {
+    try {
+        // Close HTTP server
+        if (global.server) {
+            await new Promise((resolve) => {
+                global.server.close(() => {
+                    console.log('✓ HTTP server closed');
+                    resolve();
+                });
+            });
+        }
+
+        // Close Firebase connection
+        const { closeFirebase } = await import('./database/firebasConfig.js');
+        await closeFirebase();
+
+        console.log('✓ Graceful shutdown complete');
+        process.exit(0);
+    } catch (error) {
+        console.error('✗ Error during shutdown:', error);
+        process.exit(1);
+    }
+}
+
+// Start the server
+startServer();
+
+export default app;

@@ -1,0 +1,53 @@
+[build]
+  # Frontend is in the frontend folder
+  command = "echo 'Frontend ready for deployment'"
+  publish = "frontend"
+
+# Redirect all requests to index.html for SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables
+[context.production.environment]
+  NODE_ENV = "production"
+  REACT_APP_API_URL = "https://your-backend-url.com"
+  REACT_APP_MAP_API_KEY = ""
+  VITE_API_URL = "https://your-backend-url.com"
+
+[context.deploy-preview.environment]
+  NODE_ENV = "preview"
+  REACT_APP_API_URL = "https://your-backend-url.com"
+  REACT_APP_MAP_API_KEY = ""
+  VITE_API_URL = "https://your-backend-url.com"
+
+[context.branch-deploy.environment]
+  NODE_ENV = "staging"
+  REACT_APP_API_URL = "https://your-backend-url.com"
+  REACT_APP_MAP_API_KEY = ""
+  VITE_API_URL = "https://your-backend-url.com"
+
+# Cache headers for optimal performance
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/libs/*"
+  [headers.values]
+    Cache-Control = "max-age=31536000, immutable"
+
+[[headers]]
+  for = "/styles.css"
+  [headers.values]
+    Cache-Control = "max-age=31536000, immutable"
