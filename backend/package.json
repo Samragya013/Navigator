@@ -13,8 +13,8 @@
     "heroku-postbuild": "npm install --production"
   },
   "engines": {
-    "node": "18.18.0",
-    "npm": "9.0.0"
+    "node": "20.11.0",
+    "npm": "10.0.0"
   },
   "keywords": [
     "map",
