@@ -1,0 +1,74 @@
+# ========================================
+# RENDER.COM DEPLOYMENT CONFIGURATION
+# ========================================
+# This file configures automatic deployment on render.com
+# Push this file to your GitHub repository and connect it to Render
+
+services:
+  # Backend Service
+  - type: web
+    name: navigator-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install --production
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: FRONTEND_URL
+        fromService:
+          type: web
+          name: navigator-frontend
+          property: url
+      - key: OPENROUTE_ENABLED
+        value: "true"
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "100"
+    routes:
+      - type: http
+        path: /api
+    healthCheckPath: /api/health
+    healthCheckInterval: 60
+    headers:
+      - http_path: "*"
+        http_methods:
+          - GET
+          - POST
+          - OPTIONS
+        headers:
+          - key: Access-Control-Allow-Origin
+            value: "*"
+          - key: Access-Control-Allow-Methods
+            value: "GET, POST, OPTIONS"
+          - key: Access-Control-Allow-Headers
+            value: "Content-Type, Authorization"
+    numInstances: 1
+    maxNumInstances: 1
+
+  # Frontend Service
+  - type: static_site
+    name: navigator-frontend
+    staticPublishPath: ./frontend
+    buildCommand: echo "Deploying frontend - no build needed"
+    routes:
+      - type: http
+        path: /
+    headers:
+      - http_path: "*"
+        headers:
+          - key: Cache-Control
+            value: "public, max-age=3600"
+      - http_path: "/index.html"
+        headers:
+          - key: Cache-Control
+            value: "no-cache, no-store, must-revalidate"
+    envVars:
+      - key: BACKEND_URL
+        fromService:
+          type: web
+          name: navigator-backend
+          property: url

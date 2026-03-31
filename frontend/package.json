@@ -1,0 +1,23 @@
+{
+  "name": "interactive-map-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Interactive Map-Based Time Estimation System",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 3000 -c-1 -o",
+    "dev": "npx http-server . -p 3000 -c-1",
+    "build": "echo 'Frontend requires no build step - copy to deployment directory'",
+    "test": "echo 'No tests configured for frontend'"
+  },
+  "keywords": [
+    "map",
+    "navigation",
+    "time-estimation",
+    "frontend",
+    "leaflet"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {}
+}
