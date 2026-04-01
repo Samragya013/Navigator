@@ -14,12 +14,9 @@ services:
     repo: https://github.com/Samragya013/Navigator.git
     branch: main
     
-    # Root directory where package.json is located
-    rootDir: backend
-    
-    # Build and start configuration
-    buildCommand: npm install --production
-    startCommand: node backend/server.js
+    # Build and start configuration (from project root)
+    buildCommand: cd backend && npm install --production
+    startCommand: cd backend && node server.js
     
     # Environment variables
     envVars:
