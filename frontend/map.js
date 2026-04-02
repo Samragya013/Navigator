@@ -9,13 +9,26 @@
 
 // Dynamically detect API URL based on environment
 const API_BASE_URL = (() => {
-    // Local development
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'http://localhost:5000/api';
+    const hostname = window.location.hostname;
+    const origin = window.location.origin;
+    
+    // Debug logging
+    console.log('🔍 Environment Detection:');
+    console.log(`   Hostname: ${hostname}`);
+    console.log(`   Origin: ${origin}`);
+    console.log(`   Protocol: ${window.location.protocol}`);
+    
+    // Local development (localhost or 127.0.0.1)
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        const url = 'http://localhost:5000/api';
+        console.log(`   → Using LOCAL development API: ${url}`);
+        return url;
     }
     
-    // Production (including Render - same hostname, just /api path)
-    return `${window.location.origin}/api`;
+    // Production (Render, Netlify, or any other domain)
+    const url = `${origin}/api`;
+    console.log(`   → Using PRODUCTION API: ${url}`);
+    return url;
 })();
 
 const MAP_CONFIG = {
