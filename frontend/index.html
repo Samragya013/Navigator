@@ -995,14 +995,22 @@
         function displayResults() {
             if (!currentTrip) return;
             
-            document.getElementById('distanceValue').textContent = currentTrip.distance.text;
-            // Always show travel duration (not arrival time)
-            document.getElementById('timeValue').textContent = currentTrip.duration.text;
-            document.getElementById('statusValue').textContent = 'Route Ready';
-            document.getElementById('resultsSection').style.display = 'block';
-            
-            // Scroll to results
-            document.querySelector('.control-section').scrollTop = 999;
+            const resultsSection = document.getElementById('resultsSection');
+            if (resultsSection) {
+                // Update result card fields for route display
+                const distanceEl = document.getElementById('resultDistance');
+                const timeEl = document.getElementById('resultTime');
+                const statusEl = document.getElementById('resultStatus');
+                
+                if (distanceEl) distanceEl.textContent = currentTrip.distance?.text || 'N/A';
+                if (timeEl) timeEl.textContent = currentTrip.duration?.text || 'N/A';
+                if (statusEl) statusEl.textContent = 'Route Ready';
+                
+                resultsSection.style.display = 'block';
+                
+                // Scroll to results
+                document.querySelector('.control-section').scrollTop = 999;
+            }
         }
 
         function speakRoute() {

@@ -47,7 +47,7 @@ app.use(helmet({
             imgSrc: ["'self'", "data:", "https:", "http:"],
             connectSrc: isDevelopment 
                 ? ["'self'", "localhost:*", "http://localhost:*", "https://cdn.jsdelivr.net", "https://router.project-osrm.org", "https://nominatim.openstreetmap.org", "https://*.basemaps.cartocdn.com", "https://*.tile.openstreetmap.org"]
-                : ["'self'", "https://router.project-osrm.org", "https://nominatim.openstreetmap.org", "https://*.basemaps.cartocdn.com", "https://*.tile.openstreetmap.org"],
+                : ["'self'", "https://cdn.jsdelivr.net", "https://router.project-osrm.org", "https://nominatim.openstreetmap.org", "https://*.basemaps.cartocdn.com", "https://*.tile.openstreetmap.org"],
             formAction: ["'self'"],
             frameAncestors: ["'none'"],
             baseUri: ["'self'"],
