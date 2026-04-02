@@ -29,19 +29,24 @@ const PORT = process.env.PORT || 5000;
 // ============================================
 
 // Helmet helps secure Express apps by setting HTTP response headers
-// Configure helmet with proper CSP to allow frontend CDN resources
+// Configure helmet with proper CSP to allow frontend CDN resources and API calls
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc: ["'self'"],
             scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
             styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
-            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
+            fontSrc: ["'self'", "data:", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
             imgSrc: ["'self'", "data:", "https:", "http:"],
-            connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://router.project-osrm.org", "https://nominatim.openstreetmap.org", "https://*.basemaps.cartocdn.com"],
+            connectSrc: isDevelopment 
+                ? ["'self'", "localhost:*", "http://localhost:*", "https://cdn.jsdelivr.net", "https://router.project-osrm.org", "https://nominatim.openstreetmap.org", "https://*.basemaps.cartocdn.com", "https://*.tile.openstreetmap.org"]
+                : ["'self'", "https://router.project-osrm.org", "https://nominatim.openstreetmap.org", "https://*.basemaps.cartocdn.com", "https://*.tile.openstreetmap.org"],
             formAction: ["'self'"],
             frameAncestors: ["'none'"],
-            upgradeInsecureRequests: []
+            baseUri: ["'self'"],
+            objectSrc: ["'none'"]
         }
     }
 }));
