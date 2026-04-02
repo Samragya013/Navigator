@@ -14,11 +14,10 @@ services:
     region: singapore
     repo: https://github.com/Samragya013/Navigator.git
     branch: main
-    rootDir: backend
 
-    # Build and start configuration
-    buildCommand: npm ci --production
-    startCommand: npm start
+    # Build and start configuration (works from root directory)
+    buildCommand: npm install --prefix backend --production
+    startCommand: node backend/server.js
 
     # Environment variables
     envVars:
