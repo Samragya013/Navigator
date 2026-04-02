@@ -14,9 +14,14 @@ services:
     region: singapore
     repo: https://github.com/Samragya013/Navigator.git
     branch: main
-    
-    # Build and start configuration (from project root)
-    buildCommand: cd backend && npm install --production
+    rootDir: backend
+
+    # Build and start configuration
+    buildCommand: npm ci --production
+    startCommand: npm start
+
+    # Environment variables
+    envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
@@ -29,10 +34,10 @@ services:
         value: "100"
       - key: LOG_LEVEL
         value: info
-    
+
     # Health check configuration
     healthCheckPath: /api/health
     healthCheckInterval: 60
-    
+
     # Auto-deploy on GitHub push
     autoDeployOnPush: true
