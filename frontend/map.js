@@ -9,19 +9,13 @@
 
 // Dynamically detect API URL based on environment
 const API_BASE_URL = (() => {
-    // If window location is on Render domain
-    if (window.location.hostname && window.location.hostname.includes('render.com')) {
-        // Extract backend URL from window or use default
-        return window.BACKEND_API_URL || `${window.location.protocol}//navigator-backend.onrender.com`;
-    }
-    
-    // Production environment
-    if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-        return `${window.location.protocol}//${window.location.hostname}:${window.location.port || (window.location.protocol === 'https:' ? 443 : 80)}/api`;
-    }
-    
     // Local development
-    return 'http://localhost:5000';
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:5000/api';
+    }
+    
+    // Production (including Render - same hostname, just /api path)
+    return `${window.location.origin}/api`;
 })();
 
 const MAP_CONFIG = {

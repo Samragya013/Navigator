@@ -1,15 +1,21 @@
 /**
  * Main Express Server
  * Entry point for the backend API
+ * Now serves both backend API and frontend static files (Full-stack)
  */
 
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { createRateLimiter } from './middleware/rateLimit.js';
 import { initializeFirebase } from './database/firebasConfig.js';
 import navigationRoutes from './routes/navigation.js';
+
+// Get directory path for ES modules
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Load environment variables
 dotenv.config();
@@ -121,6 +127,15 @@ app.use((req, res, next) => {
 });
 
 // ============================================
+// SERVE STATIC FRONTEND FILES
+// ============================================
+
+const frontendPath = path.join(__dirname, '../frontend');
+
+// Serve frontend static files (CSS, JS, images, etc.)
+app.use(express.static(frontendPath));
+
+// ============================================
 // ROUTES
 // ============================================
 
@@ -128,18 +143,27 @@ app.use((req, res, next) => {
 app.use('/api', navigationRoutes);
 
 /**
- * Root endpoint
+ * Root endpoint - serve index.html for SPA
  */
 app.get('/', (req, res) => {
-    res.status(200).json({
-        message: 'Interactive Map - Time Estimation API',
-        version: '1.0.0',
-        status: 'online',
-        endpoints: {
-            postLocation: 'POST /api/location',
-            getResult: 'GET /api/result/:requestId',
-            validateCoordinates: 'POST /api/validate',
-            health: 'GET /api/health'
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
+
+/**
+ * Catch-all route - serve index.html for browser routing
+ */
+app.get('*', (req, res, next) => {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+        return next();
+    }
+    // Serve index.html for all other routes
+    res.sendFile(path.join(frontendPath, 'index.html'), (err) => {
+        if (err) {
+            res.status(404).json({
+                error: 'Page not found',
+                path: req.path
+            });
         }
     });
 });

@@ -1,21 +1,22 @@
-# ========================================
+﻿# ========================================
 # RENDER.COM DEPLOYMENT CONFIGURATION
 # ========================================
+# Full-stack deployment: Backend API + Frontend in ONE Web Service
 # Native Node.js deployment (no Docker required)
 # Push this to GitHub and Render will auto-deploy
 
 services:
-  # Backend Service - Native Node.js
+  # Single Web Service - Backend API + Frontend Static Files Combined
   - type: web
-    name: navigator-backend
+    name: navigator-fullstack
     env: node
     plan: free
-    region: virginia
+    region: singapore
     repo: https://github.com/Samragya013/Navigator.git
     branch: main
     
     # Build and start configuration (from project root)
-    buildCommand: cd backend && npm install --production
+    buildCommand: npm install && cd backend && npm install --production
     startCommand: cd backend && node server.js
     
     # Environment variables
@@ -32,28 +33,10 @@ services:
         value: "100"
       - key: LOG_LEVEL
         value: info
-      - key: FRONTEND_URL
-        fromService:
-          type: static_site
-          name: navigator-frontend
-          property: url
     
     # Health check configuration
     healthCheckPath: /api/health
     healthCheckInterval: 60
     
     # Auto-deploy on GitHub push
-    autoDeployOnPush: true
-
-  # Frontend Service - Static Site
-  - type: static_site
-    name: navigator-frontend
-    repo: https://github.com/Samragya013/Navigator.git
-    branch: main
-    publishPath: frontend
-    
-    # Build config
-    buildCommand: echo "Frontend ready"
-    
-    # Auto-deploy
     autoDeployOnPush: true
