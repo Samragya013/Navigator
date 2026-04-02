@@ -31,26 +31,34 @@ router.post(
             // Calculate time estimation
             const estimation = await calculateTimeEstimation(latitude, longitude);
 
-            // Store in database
-            const storedData = await storeLocationRequest(
-                latitude,
-                longitude,
-                estimation.timeFormatted,
-                'success'
-            );
+            // Try to store in database (optional)
+            let storedData = null;
+            try {
+                storedData = await storeLocationRequest(
+                    latitude,
+                    longitude,
+                    estimation.timeFormatted,
+                    'success'
+                );
+            } catch (firebaseErr) {
+                console.warn('⚠️  Firebase storage unavailable, continuing without persistence:', firebaseErr.message);
+                // Firestore is optional - proceed without it
+            }
 
             // Format response (ALWAYS IN ENGLISH)
             const response = {
                 status: 'success',
                 message: 'Estimated travel time calculated successfully.',
                 estimated_time: estimation.timeFormatted,
+                estimated_time_minutes: estimation.timeMinutes,
                 distance: `${estimation.distanceKm} kilometers`,
+                traffic_factor: estimation.trafficFactor || '1.0',
                 location: {
                     latitude,
                     longitude
                 },
                 timestamp: new Date().toISOString(),
-                requestId: storedData.id,
+                requestId: storedData?.id || 'local-' + Date.now(),
                 provider: estimation.provider
             };
 

@@ -8,6 +8,7 @@ import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { calculateRoute, reverseGeocode, forwardGeocode, pinCodeGeocode } from '../services/navigationService.js';
 import { getFirestore } from '../database/firebasConfig.js';
+import locationRoutes from './location.js';
 
 const router = express.Router();
 
@@ -458,5 +459,8 @@ function parseCoordinates(coordString) {
 
     return null;
 }
+
+// Include location routes
+router.use('/', locationRoutes);
 
 export default router;

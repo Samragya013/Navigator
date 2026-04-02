@@ -239,32 +239,44 @@ async function processLocation(latitude, longitude) {
 function displayResult(result, request) {
     const resultCard = document.getElementById('resultCard');
     const resultLocation = document.getElementById('resultLocation');
+    const resultDistance = document.getElementById('resultDistance');
     const resultTime = document.getElementById('resultTime');
+    const resultTraffic = document.getElementById('resultTraffic');
     const resultStatus = document.getElementById('resultStatus');
     const resultMessage = document.getElementById('resultMessage');
 
     // Format location
     resultLocation.textContent = `${request.latitude.toFixed(4)}°, ${request.longitude.toFixed(4)}°`;
 
+    // Extract distance
+    const distance = result.distance || 'N/A';
+    resultDistance.textContent = distance;
+
     // Extract estimated time
     const estimatedTime = result.estimated_time || 'N/A';
     resultTime.textContent = estimatedTime;
+
+    // Extract traffic factor
+    const trafficFactor = result.traffic_factor || '1.0';
+    resultTraffic.textContent = `${trafficFactor}x`;
 
     // Extract status
     const status = result.status || 'unknown';
     resultStatus.textContent = status.charAt(0).toUpperCase() + status.slice(1);
 
-    // Extract message
-    const message = result.message || 'No additional information available.';
+    // Extract message/provider
+    const message = result.provider || 'Route calculated successfully';
     resultMessage.textContent = message;
 
-    // Show result card
+    // Show result card and its section
+    const resultsSection = document.getElementById('resultsSection');
+    resultsSection.style.display = 'block';
     resultCard.classList.remove('hidden');
     resultCard.classList.add('visible');
 
     // Scroll to result
     setTimeout(() => {
-        resultCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 100);
 }
 
@@ -392,12 +404,33 @@ function createSelectedIcon() {
  * Validate coordinates
  */
 function isValidCoordinate(lat, lng) {
-    return typeof lat === 'number' &&
-        typeof lng === 'number' &&
-        lat >= -90 &&
-        lat <= 90 &&
-        lng >= -180 &&
-        lng <= 180;
+    // Check types
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+        console.error(`❌ Invalid coordinate types: lat=${typeof lat}, lng=${typeof lng}`);
+        return false;
+    }
+    
+    // Check ranges with detailed logging
+    const latValid = lat >= -90 && lat <= 90;
+    const lngValid = lng >= -180 && lng <= 180;
+    const isFinite = Number.isFinite(lat) && Number.isFinite(lng);
+    
+    if (!isFinite) {
+        console.error(`❌ Non-finite coordinates: lat=${lat}, lng=${lng}`);
+        return false;
+    }
+    
+    if (!latValid) {
+        console.error(`❌ Invalid latitude: ${lat} (must be between -90 and 90)`);
+        return false;
+    }
+    
+    if (!lngValid) {
+        console.error(`❌ Invalid longitude: ${lng} (must be between -180 and 180)`);
+        return false;
+    }
+    
+    return true;
 }
 
 // ============================================

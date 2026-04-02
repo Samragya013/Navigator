@@ -521,18 +521,30 @@
 
             <!-- Results Section -->
             <div class="results-section" id="resultsSection" style="display: none;">
-                <div class="result-card">
+                <div class="result-card" id="resultCard">
+                    <div class="result-row">
+                        <span class="label">📍 Location</span>
+                        <span class="value" id="resultLocation">-</span>
+                    </div>
                     <div class="result-row">
                         <span class="label">📏 Distance</span>
-                        <span class="value" id="distanceValue">-</span>
+                        <span class="value" id="resultDistance">-</span>
                     </div>
                     <div class="result-row">
                         <span class="label">⏱️ Estimated Time</span>
-                        <span class="value" id="timeValue">-</span>
+                        <span class="value" id="resultTime">-</span>
                     </div>
                     <div class="result-row">
-                        <span class="label">📍 Route Status</span>
-                        <span class="value" id="statusValue">Ready</span>
+                        <span class="label">🚗 Traffic Factor</span>
+                        <span class="value" id="resultTraffic">-</span>
+                    </div>
+                    <div class="result-row">
+                        <span class="label">📊 Route Status</span>
+                        <span class="value" id="resultStatus">Ready</span>
+                    </div>
+                    <div class="result-row" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-color);">
+                        <span class="label">ℹ️ Info</span>
+                        <span class="value" style="font-size: 13px; color: var(--text-secondary); text-align: right;" id="resultMessage">-</span>
                     </div>
                 </div>
 

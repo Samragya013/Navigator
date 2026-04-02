@@ -46,18 +46,46 @@ export async function calculateRoute(origin, destination) {
         const distanceMeters = route.distance || 0;
         const durationSeconds = route.duration || 0;
 
-        // Convert distance (meters to km)
+        // Validate that result makes logical sense
+        if (distanceMeters <= 0 || durationSeconds <= 0) {
+            throw new Error('Invalid route: distance or duration is zero');
+        }
+
+        // Calculate distance in km (needed for traffic multiplier calculation)
+        const distanceKm = distanceMeters / 1000;
+
+        // Convert distance (meters to km) for response
         const distance = {
             value: distanceMeters,
             text: `${(distanceMeters / 1000).toFixed(1)} km`
         };
 
         // Convert duration (seconds to minutes)
-        const durationMinutes = Math.ceil(durationSeconds / 60);
+        let durationMinutes = Math.ceil(durationSeconds / 60);
+        
+        // Apply realistic traffic multiplier to account for real-world conditions
+        const { adjustedMinutes, trafficFactor } = applyTrafficMultiplier(durationMinutes, distanceKm);
+        durationMinutes = adjustedMinutes;
+
         const duration = {
             value: durationMinutes,
             text: `${durationMinutes} minute${durationMinutes !== 1 ? 's' : ''}`
         };
+
+        // Calculate average speed (km/h) and warn if unrealistic
+        const durationHours = durationSeconds / 3600;
+        const avgSpeed = distanceKm / durationHours;
+
+        // Log speed for debugging
+        console.log(`📊 Route Analysis: ${distanceKm.toFixed(1)}km in ${durationMinutes}min = ${avgSpeed.toFixed(1)}km/h`);
+
+        // Warn if speed is unrealistic (> 200 km/h or < 5 km/h for distances > 10km)
+        if (avgSpeed > 200) {
+            console.warn(`⚠️  WARNING: Unrealistic speed ${avgSpeed.toFixed(1)} km/h - route may be incorrect`);
+        }
+        if (distanceKm > 10 && avgSpeed < 5) {
+            console.warn(`⚠️  WARNING: Very slow speed ${avgSpeed.toFixed(1)} km/h - route may be incorrect`);
+        }
 
         // Extract coordinates from GeoJSON geometry
         const coordinates = route.geometry.coordinates.map(coord => ({
@@ -228,6 +256,59 @@ export async function pinCodeGeocode(pincode) {
         console.error('Pincode geocoding error:', error.message);
         throw new Error(`Pincode lookup failed: ${error.message}`);
     }
+}
+
+/**
+ * Apply realistic traffic multiplier based on time of day and distance
+ * Accounts for peak hours, weekends, and road conditions
+ */
+function applyTrafficMultiplier(baseMinutes, distanceKm) {
+    const now = new Date();
+    const hour = now.getHours();
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6;
+
+    let trafficMultiplier = 1.0;
+
+    if (isWeekend) {
+        // Weekend - lighter traffic
+        if (hour >= 19 || hour < 7) {
+            trafficMultiplier = 0.9; // Night: 10% faster
+        } else if (hour >= 7 && hour < 12) {
+            trafficMultiplier = 1.15; // Morning: 15% slower
+        } else if (hour >= 12 && hour < 17) {
+            trafficMultiplier = 1.0; // Afternoon: normal
+        } else {
+            trafficMultiplier = 1.25; // Evening: 25% slower
+        }
+    } else {
+        // Weekday - more traffic
+        if (hour >= 19 || hour < 6) {
+            trafficMultiplier = 0.85; // Night: 15% faster
+        } else if (hour >= 6 && hour < 9) {
+            trafficMultiplier = 1.6; // Morning rush: 60% SLOWER
+        } else if (hour >= 9 && hour < 16) {
+            trafficMultiplier = 1.0; // Daytime: normal
+        } else if (hour >= 16 && hour < 19) {
+            trafficMultiplier = 1.8; // Evening rush: 80% SLOWER
+        }
+    }
+
+    // Adjust for distance
+    if (distanceKm > 25) {
+        trafficMultiplier *= 0.85; // Long routes: slightly better (may include highways)
+    } else if (distanceKm < 5) {
+        trafficMultiplier *= 1.1; // Short routes: more city traffic
+    }
+
+    // Add buffer for real-world delays
+    const adjustedMinutes = Math.ceil(baseMinutes * trafficMultiplier);
+
+    console.log(`🚗 Route Time Adjustment: ${baseMinutes}min base × ${trafficMultiplier.toFixed(2)} traffic = ${adjustedMinutes}min`);
+
+    return {
+        adjustedMinutes,
+        trafficFactor: trafficMultiplier
+    };
 }
 
 /**
