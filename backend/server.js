@@ -29,7 +29,22 @@ const PORT = process.env.PORT || 5000;
 // ============================================
 
 // Helmet helps secure Express apps by setting HTTP response headers
-app.use(helmet());
+// Configure helmet with proper CSP to allow frontend CDN resources
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://cdn.jsdelivr.net", "https://fonts.googleapis.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn.jsdelivr.net"],
+            imgSrc: ["'self'", "data:", "https:", "http:"],
+            connectSrc: ["'self'", "https://cdn.jsdelivr.net", "https://router.project-osrm.org", "https://nominatim.openstreetmap.org", "https://*.basemaps.cartocdn.com"],
+            formAction: ["'self'"],
+            frameAncestors: ["'none'"],
+            upgradeInsecureRequests: []
+        }
+    }
+}));
 
 // CORS configuration - Accept multiple origins
 const allowedOrigins = [
