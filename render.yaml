@@ -16,11 +16,7 @@ services:
     branch: main
     
     # Build and start configuration (from project root)
-    buildCommand: npm install && cd backend && npm install --production
-    startCommand: cd backend && node server.js
-    
-    # Environment variables
-    envVars:
+    buildCommand: cd backend && npm install --production
       - key: NODE_ENV
         value: production
       - key: PORT
