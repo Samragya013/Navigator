@@ -17,8 +17,13 @@ import navigationRoutes from './routes/navigation.js';
 // Get directory path for ES modules
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load environment variables
-dotenv.config();
+// Load environment variables from .env file (only if not on Render deployment)
+if (process.env.RENDER !== 'true') {
+    dotenv.config();
+} else {
+    // On Render, use only environment variables provided by the platform
+    console.log('✓ Running on Render - using platform environment variables');
+}
 
 // Create Express app
 const app = express();
@@ -62,40 +67,44 @@ const allowedOrigins = [
 
 // Add support for Render.com deployment
 const isRenderDeployment = process.env.RENDER === 'true';
+const isProduction = process.env.NODE_ENV === 'production';
 
 const corsOptions = {
     origin: function (origin, callback) {
-        // Allow requests without origin (same-origin requests)
+        // Allow requests without origin (same-origin requests from frontend)
         if (!origin) {
             callback(null, true);
             return;
         }
         
-        // Check specific origins
+        // In production (Render), always allow same-origin requests
+        if (isProduction || isRenderDeployment) {
+            // Allow all render.com domains
+            if (origin.includes('render.com')) {
+                callback(null, true);
+                return;
+            }
+        }
+        
+        // Check specific allowed origins
         if (allowedOrigins.includes(origin)) {
             callback(null, true);
             return;
         }
         
-        // For Render.com deployments, allow render.com domains
-        if (isRenderDeployment && origin && origin.includes('render.com')) {
+        // Development: allow all
+        if (isDevelopment) {
             callback(null, true);
             return;
         }
         
-        // For production, allow the frontend URL
-        if (process.env.NODE_ENV === 'production' && origin === process.env.FRONTEND_URL) {
-            callback(null, true);
-            return;
-        }
-        
-        // Deny other origins in production
-        if (process.env.NODE_ENV === 'production') {
+        // Production: deny unknown origins
+        if (isProduction) {
             callback(new Error('Not allowed by CORS'));
             return;
         }
         
-        // Allow all in development
+        // Allow all in dev
         callback(null, true);
     },
     credentials: true,
@@ -295,10 +304,12 @@ const startServer = async () => {
             console.log('🚀 Interactive Map Backend Server');
             console.log('═══════════════════════════════════════════════');
             console.log(`✓ Server running on http://localhost:${PORT}`);
-            console.log(`✓ Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(`✓ Frontend URL: ${process.env.FRONTEND_URL || 'not configured'}`);
+            console.log(`✓ Environment: ${process.env.NODE_ENV || 'not set'}`);
+            console.log(`✓ Render Deployment: ${isRenderDeployment ? 'YES' : 'NO'}`);
+            console.log(`✓ Frontend URL: ${process.env.FRONTEND_URL || 'using same-origin'}`);
+            console.log(`✓ CSP Policy: ${isDevelopment ? 'RELAXED (development)' : 'STRICT (production)'}`);
             console.log(`✓ API Docs: http://localhost:${PORT}/docs`);
-            console.log('✓ Database: Firebase Firestore');
+            console.log('✓ Database: Firebase Firestore (optional, will continue without)');
             console.log('═══════════════════════════════════════════════');
             console.log('');
         });
